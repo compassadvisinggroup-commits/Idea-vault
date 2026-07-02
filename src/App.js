@@ -54,8 +54,62 @@ function Inbox({ onAddIdea }) {
   );
 }
 
-// MINDMAP COMPONENT - Display all ideas
-function MindMap({ ideas }) {
+// EDIT FORM COMPONENT - Edit an existing idea
+function EditForm({ idea, onSave, onCancel }) {
+  const [title, setTitle] = useState(idea.title);
+  const [description, setDescription] = useState(idea.description || '');
+  const [type, setType] = useState(idea.type);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase
+        .from('ideas')
+        .update({ title, description, type })
+        .eq('id', idea.id)
+        .select();
+      
+      if (error) throw error;
+      onSave(data[0]);
+    } catch (err) {
+      console.error('Error updating idea:', err);
+    }
+  };
+
+  return (
+    <div className="edit-form-overlay">
+      <div className="edit-form">
+        <h2>✏️ Edit Idea</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <textarea
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <select value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="product">Product</option>
+            <option value="work_tool">Work Tool</option>
+            <option value="student_resource">Learning</option>
+            <option value="fun">Fun Idea</option>
+          </select>
+          <div className="form-buttons">
+            <button type="submit">Save Changes</button>
+            <button type="button" onClick={onCancel}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// MINDMAP COMPONENT - Display all ideas with edit/delete buttons
+function MindMap({ ideas, onEdit, onDelete }) {
   const colors = {
     product: '#d98880',
     work_tool: '#8ab39f',
@@ -81,6 +135,10 @@ function MindMap({ ideas }) {
               <span className="type-badge" style={{ backgroundColor: colors[idea.type] }}>
                 {idea.type.replace('_', ' ')}
               </span>
+              <div className="card-buttons">
+                <button className="edit-btn" onClick={() => onEdit(idea)}>Edit</button>
+                <button className="delete-btn" onClick={() => onDelete(idea.id)}>Delete</button>
+              </div>
             </div>
           ))
         )}
@@ -93,6 +151,7 @@ function MindMap({ ideas }) {
 function App() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingIdea, setEditingIdea] = useState(null);
 
   // Load ideas from Supabase on startup
   useEffect(() => {
@@ -119,6 +178,25 @@ function App() {
     setIdeas([newIdea, ...ideas]);
   };
 
+  const handleEditIdea = (updatedIdea) => {
+    setIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
+    setEditingIdea(null);
+  };
+
+  const handleDeleteIdea = async (ideaId) => {
+    try {
+      const { error } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('id', ideaId);
+      
+      if (error) throw error;
+      setIdeas(ideas.filter(idea => idea.id !== ideaId));
+    } catch (err) {
+      console.error('Error deleting idea:', err);
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -127,7 +205,14 @@ function App() {
       </header>
       <main>
         <Inbox onAddIdea={handleAddIdea} />
-        {loading ? <p>Loading ideas...</p> : <MindMap ideas={ideas} />}
+        {loading ? <p>Loading ideas...</p> : <MindMap ideas={ideas} onEdit={setEditingIdea} onDelete={handleDeleteIdea} />}
+        {editingIdea && (
+          <EditForm
+            idea={editingIdea}
+            onSave={handleEditIdea}
+            onCancel={() => setEditingIdea(null)}
+          />
+        )}
       </main>
     </div>
   );

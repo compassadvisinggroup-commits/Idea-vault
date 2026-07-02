@@ -1,38 +1,380 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Color Palette - Cultivated Emergence */
+:root {
+  --color-product: #d98880;
+  --color-work: #8ab39f;
+  --color-learning: #c9a876;
+  --color-fun: #e8b8a0;
+  --color-border: #d4a574;
+  --color-text-dark: #5a4a42;
+  --color-text-light: #8a7a72;
+  --color-bg-light: #faf5f0;
+  --color-bg-warm: #f5ede6;
+}
+
+body {
+  font-family: 'Georgia', serif;
+  background: linear-gradient(135deg, #faf5f0 0%, #f5ede6 100%);
+  color: var(--color-text-dark);
+  min-height: 100vh;
+  padding: 20px;
+}
+
 .App {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.App-header {
   text-align: center;
+  margin: 40px 0;
+  padding: 40px 20px;
+  background: linear-gradient(180deg, rgba(212, 165, 116, 0.1) 0%, transparent 100%);
+  border-radius: 16px;
+  border: 2px solid var(--color-border);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.App-header h1 {
+  font-size: 48px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  color: var(--color-text-dark);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+.App-header p {
+  font-size: 18px;
+  font-style: italic;
+  color: var(--color-text-light);
+  letter-spacing: 0.5px;
+}
+
+/* Main Content */
+main {
+  display: grid;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+/* Inbox Section */
+.inbox {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  border: 2px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(90, 74, 66, 0.08);
+  transition: all 0.3s ease;
+}
+
+.inbox:hover {
+  box-shadow: 0 8px 20px rgba(90, 74, 66, 0.12);
+  border-color: var(--color-product);
+}
+
+.inbox h2 {
+  font-size: 24px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  color: var(--color-text-dark);
+  letter-spacing: 1px;
+}
+
+.inbox form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inbox input,
+.inbox textarea,
+.inbox select {
+  padding: 12px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  background: var(--color-bg-light);
+  color: var(--color-text-dark);
+  transition: all 0.3s ease;
+}
+
+.inbox input:focus,
+.inbox textarea:focus,
+.inbox select:focus {
+  outline: none;
+  border-color: var(--color-product);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(217, 136, 128, 0.1);
+}
+
+.inbox textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.inbox button {
+  padding: 12px 24px;
+  background: var(--color-product);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Georgia', serif;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.inbox button:hover {
+  background: #c9786e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(217, 136, 128, 0.3);
+}
+
+/* Mind Map Section */
+.mindmap {
+  padding: 20px 0;
+}
+
+.mindmap h2 {
+  font-size: 24px;
+  font-weight: 400;
+  margin-bottom: 24px;
+  color: var(--color-text-dark);
+  letter-spacing: 1px;
+}
+
+.ideas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.idea-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  border-left: 4px solid;
+  box-shadow: 0 4px 12px rgba(90, 74, 66, 0.08);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.idea-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(90, 74, 66, 0.15);
+}
+
+.idea-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  line-height: 1.4;
+}
+
+.idea-card p {
+  font-size: 14px;
+  color: var(--color-text-light);
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: white;
+  font-weight: 500;
+  text-transform: capitalize;
+  width: fit-content;
+  margin-top: 8px;
+}
+
+.card-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.edit-btn,
+.delete-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid var(--color-border);
+  background: white;
+  color: var(--color-text-dark);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Georgia', serif;
+}
+
+.edit-btn:hover {
+  background: var(--color-border);
+  color: white;
+  border-color: var(--color-border);
+}
+
+.delete-btn:hover {
+  background: var(--color-product);
+  color: white;
+  border-color: var(--color-product);
+}
+
+/* Edit Form Overlay */
+.edit-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.edit-form {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  border: 2px solid var(--color-border);
+  box-shadow: 0 8px 32px rgba(90, 74, 66, 0.2);
+  max-width: 500px;
+  width: 100%;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.edit-form h2 {
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  color: var(--color-text-dark);
+  letter-spacing: 1px;
+}
+
+.edit-form form {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  gap: 16px;
+}
+
+.edit-form input,
+.edit-form textarea,
+.edit-form select {
+  padding: 12px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  background: var(--color-bg-light);
+  color: var(--color-text-dark);
+}
+
+.edit-form input:focus,
+.edit-form textarea:focus,
+.edit-form select:focus {
+  outline: none;
+  border-color: var(--color-work);
+  background: white;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.form-buttons button {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-buttons button[type="submit"] {
+  background: var(--color-work);
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.form-buttons button[type="submit"]:hover {
+  background: #7a9a8a;
+  transform: translateY(-2px);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.form-buttons button[type="button"] {
+  background: var(--color-bg-warm);
+  color: var(--color-text-dark);
+  border: 1.5px solid var(--color-border);
+}
+
+.form-buttons button[type="button"]:hover {
+  background: var(--color-border);
+  color: white;
+}
+
+/* Empty State */
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-light);
+  font-style: italic;
+  grid-column: 1 / -1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .App-header h1 {
+    font-size: 32px;
   }
-  to {
-    transform: rotate(360deg);
+
+  .App-header p {
+    font-size: 16px;
+  }
+
+  .inbox {
+    padding: 24px;
+  }
+
+  .ideas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .idea-card {
+    padding: 18px;
+  }
+
+  .edit-form {
+    padding: 24px;
   }
 }
