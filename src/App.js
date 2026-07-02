@@ -54,7 +54,7 @@ function Inbox({ onAddIdea }) {
   );
 }
 
-// EDIT FORM COMPONENT - Edit an existing idea
+// EDIT FORM COMPONENT
 function EditForm({ idea, onSave, onCancel }) {
   const [title, setTitle] = useState(idea.title);
   const [description, setDescription] = useState(idea.description || '');
@@ -108,7 +108,41 @@ function EditForm({ idea, onSave, onCancel }) {
   );
 }
 
-// MINDMAP COMPONENT - Display all ideas with edit/delete buttons
+// FILTER SECTION - Search and filter controls
+function FilterSection({ searchTerm, onSearchChange, selectedType, onTypeChange }) {
+  const types = [
+    { value: 'all', label: 'All Ideas' },
+    { value: 'product', label: 'Product' },
+    { value: 'work_tool', label: 'Work Tools' },
+    { value: 'student_resource', label: 'Learning' },
+    { value: 'fun', label: 'Fun' }
+  ];
+
+  return (
+    <div className="filter-section">
+      <input
+        type="text"
+        placeholder="🔍 Search ideas..."
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="search-input"
+      />
+      <div className="filter-buttons">
+        {types.map(type => (
+          <button
+            key={type.value}
+            className={`filter-btn ${selectedType === type.value ? 'active' : ''}`}
+            onClick={() => onTypeChange(type.value)}
+          >
+            {type.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// MINDMAP COMPONENT
 function MindMap({ ideas, onEdit, onDelete }) {
   const colors = {
     product: '#d98880',
@@ -122,7 +156,7 @@ function MindMap({ ideas, onEdit, onDelete }) {
       <h2>🌱 Your Ideas</h2>
       <div className="ideas-grid">
         {ideas.length === 0 ? (
-          <p className="empty">No ideas yet. Start capturing!</p>
+          <p className="empty">No ideas match your filters. Try a different search!</p>
         ) : (
           ideas.map((idea) => (
             <div
@@ -147,13 +181,15 @@ function MindMap({ ideas, onEdit, onDelete }) {
   );
 }
 
-// MAIN APP COMPONENT
+// MAIN APP
 function App() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingIdea, setEditingIdea] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('all');
 
-  // Load ideas from Supabase on startup
+  // Load ideas from Supabase
   useEffect(() => {
     const loadIdeas = async () => {
       try {
@@ -173,6 +209,13 @@ function App() {
 
     loadIdeas();
   }, []);
+
+  // Filter ideas based on search and type
+  const filteredIdeas = ideas.filter(idea => {
+    const matchesSearch = idea.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === 'all' || idea.type === selectedType;
+    return matchesSearch && matchesType;
+  });
 
   const handleAddIdea = (newIdea) => {
     setIdeas([newIdea, ...ideas]);
@@ -205,7 +248,17 @@ function App() {
       </header>
       <main>
         <Inbox onAddIdea={handleAddIdea} />
-        {loading ? <p>Loading ideas...</p> : <MindMap ideas={ideas} onEdit={setEditingIdea} onDelete={handleDeleteIdea} />}
+        {!loading && (
+          <>
+            <FilterSection 
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              selectedType={selectedType}
+              onTypeChange={setSelectedType}
+            />
+            <MindMap ideas={filteredIdeas} onEdit={setEditingIdea} onDelete={handleDeleteIdea} />
+          </>
+        )}
         {editingIdea && (
           <EditForm
             idea={editingIdea}
@@ -219,3 +272,4 @@ function App() {
 }
 
 export default App;
+

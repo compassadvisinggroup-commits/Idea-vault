@@ -351,7 +351,66 @@ main {
   font-style: italic;
   grid-column: 1 / -1;
 }
+/* Filter Section */
+.filter-section {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  border: 2px solid var(--color-border);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(90, 74, 66, 0.08);
+}
 
+.search-input {
+  padding: 12px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-family: 'Georgia', serif;
+  font-size: 16px;
+  background: var(--color-bg-light);
+  color: var(--color-text-dark);
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-product);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(217, 136, 128, 0.1);
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 10px 18px;
+  border: 1.5px solid var(--color-border);
+  background: white;
+  color: var(--color-text-dark);
+  border-radius: 20px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--color-product);
+  color: var(--color-product);
+}
+
+.filter-btn.active {
+  background: var(--color-product);
+  color: white;
+  border-color: var(--color-product);
+}
 /* Responsive */
 @media (max-width: 768px) {
   .App-header h1 {
