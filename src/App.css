@@ -119,23 +119,24 @@ main {
 }
 
 .inbox button {
-  padding: 12px 24px;
+  padding: 14px 28px;
   background: var(--color-product);
   color: white;
   border: none;
   border-radius: 8px;
   font-family: 'Georgia', serif;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 8px;
+  margin-top: 12px;
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
 }
 
 .inbox button:hover {
-  background: #c9786e;
+  background: #D62828;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(217, 136, 128, 0.3);
+  box-shadow: 0 6px 16px rgba(230, 57, 70, 0.4);
 }
 
 /* Mind Map Section */
