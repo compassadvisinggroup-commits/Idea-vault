@@ -108,6 +108,103 @@ function EditForm({ idea, onSave, onCancel }) {
   );
 }
 
+// VETTING PANEL COMPONENT - NEW!
+function VettingPanel({ idea, onSave, onCancel }) {
+  const [excitement, setExcitement] = useState(idea.excitement_rating || 0);
+  const [impact, setImpact] = useState(idea.impact_rating || 0);
+  const [feasibility, setFeasibility] = useState(idea.feasibility_rating || 0);
+  const [cost, setCost] = useState(idea.cost_rating || 0);
+
+  const overallScore = excitement && impact && feasibility && cost
+    ? ((excitement + impact + feasibility + cost) / 4).toFixed(1)
+    : 0;
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase
+        .from('ideas')
+        .update({
+          excitement_rating: excitement,
+          impact_rating: impact,
+          feasibility_rating: feasibility,
+          cost_rating: cost,
+          overall_score: parseFloat(overallScore)
+        })
+        .eq('id', idea.id)
+        .select();
+      
+      if (error) throw error;
+      onSave(data[0]);
+    } catch (err) {
+      console.error('Error saving ratings:', err);
+    }
+  };
+
+  const RatingScale = ({ label, value, onChange, description }) => (
+    <div className="rating-group">
+      <label>{label}</label>
+      <p className="rating-description">{description}</p>
+      <div className="rating-stars">
+        {[1, 2, 3, 4, 5].map(star => (
+          <button
+            key={star}
+            type="button"
+            className={`rating-btn ${value >= star ? 'active' : ''}`}
+            onClick={() => onChange(star)}
+          >
+            ⭐
+          </button>
+        ))}
+      </div>
+      <span className="rating-value">{value}/5</span>
+    </div>
+  );
+
+  return (
+    <div className="edit-form-overlay">
+      <div className="edit-form">
+        <h2>⭐ Vet Idea: {idea.title}</h2>
+        <form onSubmit={handleSave}>
+          <RatingScale
+            label="Excitement"
+            value={excitement}
+            onChange={setExcitement}
+            description="How much do I want to work on this?"
+          />
+          <RatingScale
+            label="Impact"
+            value={impact}
+            onChange={setImpact}
+            description="How much would this matter?"
+          />
+          <RatingScale
+            label="Feasibility"
+            value={feasibility}
+            onChange={setFeasibility}
+            description="How realistic is this?"
+          />
+          <RatingScale
+            label="Cost & Resources"
+            value={cost}
+            onChange={setCost}
+            description="What would it take?"
+          />
+
+          <div className="overall-score">
+            <h3>Overall Score: {overallScore}/5</h3>
+          </div>
+
+          <div className="form-buttons">
+            <button type="submit">Save Ratings</button>
+            <button type="button" onClick={onCancel}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // FILTER SECTION - Search and filter controls
 function FilterSection({ searchTerm, onSearchChange, selectedType, onTypeChange }) {
   const types = [
@@ -143,12 +240,12 @@ function FilterSection({ searchTerm, onSearchChange, selectedType, onTypeChange 
 }
 
 // MINDMAP COMPONENT
-function MindMap({ ideas, onEdit, onDelete }) {
+function MindMap({ ideas, onEdit, onDelete, onVet }) {
   const colors = {
-    product: '#d98880',
-    work_tool: '#8ab39f',
-    student_resource: '#c9a876',
-    fun: '#e8b8a0',
+    product: '#E63946',
+    work_tool: '#10B981',
+    student_resource: '#FCD34D',
+    fun: '#FF6B35',
   };
 
   return (
@@ -169,9 +266,13 @@ function MindMap({ ideas, onEdit, onDelete }) {
               <span className="type-badge" style={{ backgroundColor: colors[idea.type] }}>
                 {idea.type.replace('_', ' ')}
               </span>
+              {idea.overall_score && (
+                <div className="idea-score">⭐ Score: {idea.overall_score}/5</div>
+              )}
               <div className="card-buttons">
                 <button className="edit-btn" onClick={() => onEdit(idea)}>Edit</button>
                 <button className="delete-btn" onClick={() => onDelete(idea.id)}>Delete</button>
+                <button className="vet-btn" onClick={() => onVet(idea)}>Vet</button>
               </div>
             </div>
           ))
@@ -186,6 +287,7 @@ function App() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingIdea, setEditingIdea] = useState(null);
+  const [vettingIdea, setVettingIdea] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
 
@@ -226,6 +328,11 @@ function App() {
     setEditingIdea(null);
   };
 
+  const handleVetIdea = (updatedIdea) => {
+    setIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
+    setVettingIdea(null);
+  };
+
   const handleDeleteIdea = async (ideaId) => {
     try {
       const { error } = await supabase
@@ -256,7 +363,12 @@ function App() {
               selectedType={selectedType}
               onTypeChange={setSelectedType}
             />
-            <MindMap ideas={filteredIdeas} onEdit={setEditingIdea} onDelete={handleDeleteIdea} />
+            <MindMap 
+              ideas={filteredIdeas} 
+              onEdit={setEditingIdea} 
+              onDelete={handleDeleteIdea}
+              onVet={setVettingIdea}
+            />
           </>
         )}
         {editingIdea && (
@@ -266,10 +378,16 @@ function App() {
             onCancel={() => setEditingIdea(null)}
           />
         )}
+        {vettingIdea && (
+          <VettingPanel
+            idea={vettingIdea}
+            onSave={handleVetIdea}
+            onCancel={() => setVettingIdea(null)}
+          />
+        )}
       </main>
     </div>
   );
 }
 
 export default App;
-
