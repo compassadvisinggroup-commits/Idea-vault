@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import supabase from './supabaseClient';
+import { supabase } from './supabaseClient';
 
 // Updated Claude API functions - now call backend instead of Claude directly
 async function generateSummary(description) {
