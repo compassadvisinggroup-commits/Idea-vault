@@ -519,6 +519,30 @@ main {
   text-align: center;
 }
 /* Responsive */
+.claude-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid var(--color-border);
+  background: white;
+  color: var(--color-text-dark);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Georgia', serif;
+}
+
+.claude-btn:hover:not(:disabled) {
+  background: var(--color-learning);
+  color: white;
+  border-color: var(--color-learning);
+}
+
+.claude-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 @media (max-width: 768px) {
   .App-header h1 {
     font-size: 32px;

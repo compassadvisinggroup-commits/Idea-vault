@@ -1,105 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { supabase } from './supabaseClient';
+import supabase from './supabaseClient';
 
-// INBOX COMPONENT - Form to capture new ideas
+// Updated Claude API functions - now call backend instead of Claude directly
+async function generateSummary(description) {
+  try {
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: `Summarize this idea in one sentence: "${description}"`,
+        type: 'summary'
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data.result;
+  } catch (error) {
+    console.error('Error generating summary:', error);
+    return 'Error generating summary';
+  }
+}
+
+async function generateTags(description) {
+  try {
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: `Generate 3-5 comma-separated tags for this idea: "${description}"`,
+        type: 'tags'
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data.result;
+  } catch (error) {
+    console.error('Error generating tags:', error);
+    return 'Error generating tags';
+  }
+}
+
+async function getVettingInsights(description, type) {
+  try {
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: `For this ${type} idea, assess: 1) Feasibility (1-5), 2) Impact potential (1-5), 3) Required resources (low/medium/high). Idea: "${description}"`,
+        type: 'insights'
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    return data.result;
+  } catch (error) {
+    console.error('Error getting insights:', error);
+    return 'Error generating insights';
+  }
+}
+
+// Inbox Component
 function Inbox({ onAddIdea }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('product');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (title.trim()) {
-      try {
-        const { data, error } = await supabase
-          .from('ideas')
-          .insert([{ title, description, type, status: 'raw_idea' }])
-          .select();
-        
-        if (error) throw error;
-        onAddIdea(data[0]);
-        setTitle('');
-        setDescription('');
-      } catch (err) {
-        console.error('Error saving idea:', err);
-      }
+      onAddIdea({ title, description, type });
+      setTitle('');
+      setDescription('');
+      setType('product');
     }
   };
 
   return (
-    <div className="inbox">
-      <h2>✨ Capture an Idea</h2>
+    <section className="inbox">
+      <h2>📥 Inbox</h2>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="What's your idea?"
+          placeholder="Idea title..."
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
-          placeholder="Tell me more..."
+          placeholder="Describe your idea..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
         <select value={type} onChange={(e) => setType(e.target.value)}>
           <option value="product">Product</option>
-          <option value="work_tool">Work Tool</option>
-          <option value="student_resource">Learning</option>
-          <option value="fun">Fun Idea</option>
+          <option value="work">Work</option>
+          <option value="learning">Learning</option>
+          <option value="fun">Fun</option>
         </select>
         <button type="submit">Add Idea</button>
       </form>
-    </div>
+    </section>
   );
 }
 
-// EDIT FORM COMPONENT
+// EditForm Component
 function EditForm({ idea, onSave, onCancel }) {
   const [title, setTitle] = useState(idea.title);
-  const [description, setDescription] = useState(idea.description || '');
-  const [type, setType] = useState(idea.type);
+  const [description, setDescription] = useState(idea.description);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const { data, error } = await supabase
-        .from('ideas')
-        .update({ title, description, type })
-        .eq('id', idea.id)
-        .select();
-      
-      if (error) throw error;
-      onSave(data[0]);
-    } catch (err) {
-      console.error('Error updating idea:', err);
-    }
+    onSave({ ...idea, title, description });
   };
 
   return (
     <div className="edit-form-overlay">
       <div className="edit-form">
-        <h2>✏️ Edit Idea</h2>
+        <h2>Edit Idea</h2>
         <form onSubmit={handleSubmit}>
           <input
             type="text"
-            placeholder="Title"
+            placeholder="Idea title..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
           <textarea
-            placeholder="Description"
+            placeholder="Describe your idea..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="product">Product</option>
-            <option value="work_tool">Work Tool</option>
-            <option value="student_resource">Learning</option>
-            <option value="fun">Fun Idea</option>
-          </select>
           <div className="form-buttons">
-            <button type="submit">Save Changes</button>
+            <button type="submit">Save</button>
             <button type="button" onClick={onCancel}>Cancel</button>
           </div>
         </form>
@@ -108,288 +139,323 @@ function EditForm({ idea, onSave, onCancel }) {
   );
 }
 
-// VETTING PANEL COMPONENT - NEW!
-function VettingPanel({ idea, onSave, onCancel }) {
-  const [excitement, setExcitement] = useState(idea.excitement_rating || 0);
-  const [impact, setImpact] = useState(idea.impact_rating || 0);
-  const [feasibility, setFeasibility] = useState(idea.feasibility_rating || 0);
-  const [cost, setCost] = useState(idea.cost_rating || 0);
+// VettingPanel Component
+function VettingPanel({ idea, onRate, onClose }) {
+  const [ratings, setRatings] = useState(idea.ratings || { feasibility: 0, impact: 0, confidence: 0 });
 
-  const overallScore = excitement && impact && feasibility && cost
-    ? ((excitement + impact + feasibility + cost) / 4).toFixed(1)
-    : 0;
-
-  const handleSave = async (e) => {
-  e.preventDefault();
-  try {
-    const { data, error } = await supabase
-      .from('ideas')
-      .update({
-        excitement_rating: excitement,
-        impact_rating: impact,
-        feasibility_rating: feasibility,
-        cost_rating: cost,
-        overall_score: parseFloat(overallScore)
-      })
-      .eq('id', idea.id)
-      .select();
-    
-    if (error) throw error;
-    if (data && data.length > 0) {
-      onSave(data[0]);
-    } else {
-      onCancel();
-    }
-  } catch (err) {
-    console.error('Error saving ratings:', err);
-    alert('Error saving ratings. Please try again.');
-  }
-};
-
-  const RatingScale = ({ label, value, onChange, description }) => (
-    <div className="rating-group">
-      <label>{label}</label>
-      <p className="rating-description">{description}</p>
-      <div className="rating-stars">
-        {[1, 2, 3, 4, 5].map(star => (
-          <button
-            key={star}
-            type="button"
-            className={`rating-btn ${value >= star ? 'active' : ''}`}
-            onClick={() => onChange(star)}
-          >
-            ⭐
-          </button>
-        ))}
-      </div>
-      <span className="rating-value">{value}/5</span>
-    </div>
-  );
+  const handleRate = (category, score) => {
+    const newRatings = { ...ratings, [category]: score };
+    setRatings(newRatings);
+    onRate(idea.id, newRatings);
+  };
 
   return (
     <div className="edit-form-overlay">
       <div className="edit-form">
-        <h2>⭐ Vet Idea: {idea.title}</h2>
-        <form onSubmit={handleSave}>
-          <RatingScale
-            label="Excitement"
-            value={excitement}
-            onChange={setExcitement}
-            description="How much do I want to work on this?"
-          />
-          <RatingScale
-            label="Impact"
-            value={impact}
-            onChange={setImpact}
-            description="How much would this matter?"
-          />
-          <RatingScale
-            label="Feasibility"
-            value={feasibility}
-            onChange={setFeasibility}
-            description="How realistic is this?"
-          />
-          <RatingScale
-            label="Cost & Resources"
-            value={cost}
-            onChange={setCost}
-            description="What would it take?"
-          />
-
-          <div className="overall-score">
-            <h3>Overall Score: {overallScore}/5</h3>
+        <h2>Vet "{idea.title}"</h2>
+        <div style={{ marginBottom: '20px' }}>
+          <p><strong>Feasibility:</strong></p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[1, 2, 3, 4, 5].map(score => (
+              <button
+                key={`feas-${score}`}
+                onClick={() => handleRate('feasibility', score)}
+                style={{
+                  padding: '10px 16px',
+                  background: ratings.feasibility === score ? '#E63946' : '#f0f0f0',
+                  color: ratings.feasibility === score ? 'white' : '#333',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                {score}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="form-buttons">
-            <button type="submit">Save Ratings</button>
-            <button type="button" onClick={onCancel}>Cancel</button>
+        <div style={{ marginBottom: '20px' }}>
+          <p><strong>Impact Potential:</strong></p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[1, 2, 3, 4, 5].map(score => (
+              <button
+                key={`impact-${score}`}
+                onClick={() => handleRate('impact', score)}
+                style={{
+                  padding: '10px 16px',
+                  background: ratings.impact === score ? '#10B981' : '#f0f0f0',
+                  color: ratings.impact === score ? 'white' : '#333',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                {score}
+              </button>
+            ))}
           </div>
-        </form>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <p><strong>Confidence:</strong></p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[1, 2, 3, 4, 5].map(score => (
+              <button
+                key={`conf-${score}`}
+                onClick={() => handleRate('confidence', score)}
+                style={{
+                  padding: '10px 16px',
+                  background: ratings.confidence === score ? '#FCD34D' : '#f0f0f0',
+                  color: ratings.confidence === score ? '#333' : '#666',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                {score}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            padding: '12px',
+            background: '#FF6B35',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+        >
+          Close
+        </button>
       </div>
     </div>
   );
 }
 
-// FILTER SECTION - Search and filter controls
+// FilterSection Component
 function FilterSection({ searchTerm, onSearchChange, selectedType, onTypeChange }) {
-  const types = [
-    { value: 'all', label: 'All Ideas' },
-    { value: 'product', label: 'Product' },
-    { value: 'work_tool', label: 'Work Tools' },
-    { value: 'student_resource', label: 'Learning' },
-    { value: 'fun', label: 'Fun' }
-  ];
+  const types = ['all', 'product', 'work', 'learning', 'fun'];
 
   return (
-    <div className="filter-section">
+    <section className="filter-section">
       <input
         type="text"
-        placeholder="🔍 Search ideas..."
+        placeholder="Search ideas..."
+        className="search-input"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="search-input"
       />
       <div className="filter-buttons">
         {types.map(type => (
           <button
-            key={type.value}
-            className={`filter-btn ${selectedType === type.value ? 'active' : ''}`}
-            onClick={() => onTypeChange(type.value)}
+            key={type}
+            className={`filter-btn ${selectedType === type ? 'active' : ''}`}
+            onClick={() => onTypeChange(type)}
           >
-            {type.label}
+            {type.charAt(0).toUpperCase() + type.slice(1)}
           </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
-// MINDMAP COMPONENT
-function MindMap({ ideas, onEdit, onDelete, onVet }) {
-  const colors = {
-    product: '#E63946',
-    work_tool: '#10B981',
-    student_resource: '#FCD34D',
-    fun: '#FF6B35',
+// MindMap Component
+function MindMap({ ideas, onEdit, onDelete, onRate }) {
+  const [editingId, setEditingId] = useState(null);
+  const [vettingId, setVettingId] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
+
+  const getTypeColor = (type) => {
+    const colors = {
+      product: '#E63946',
+      work: '#10B981',
+      learning: '#FCD34D',
+      fun: '#FF6B35'
+    };
+    return colors[type] || '#FF6B35';
+  };
+
+  const handleSummarize = async (idea) => {
+    setLoadingId(idea.id);
+    const summary = await generateSummary(idea.description);
+    alert(`Summary: ${summary}`);
+    setLoadingId(null);
+  };
+
+  const handleGenerateTags = async (idea) => {
+    setLoadingId(idea.id);
+    const tags = await generateTags(idea.description);
+    alert(`Tags: ${tags}`);
+    setLoadingId(null);
+  };
+
+  const handleGetInsights = async (idea) => {
+    setLoadingId(idea.id);
+    const insights = await getVettingInsights(idea.description, idea.type);
+    alert(`Insights: ${insights}`);
+    setLoadingId(null);
   };
 
   return (
-    <div className="mindmap">
-      <h2>🌱 Your Ideas</h2>
+    <section className="mindmap">
+      <h2>🧠 Your Ideas</h2>
       <div className="ideas-grid">
         {ideas.length === 0 ? (
-          <p className="empty">No ideas match your filters. Try a different search!</p>
+          <p className="empty">No ideas yet. Start capturing ideas above!</p>
         ) : (
-          ideas.map((idea) => (
+          ideas.map(idea => (
             <div
               key={idea.id}
               className="idea-card"
-              style={{ borderColor: colors[idea.type] }}
+              style={{ borderLeftColor: getTypeColor(idea.type) }}
             >
               <h3>{idea.title}</h3>
               <p>{idea.description}</p>
-              <span className="type-badge" style={{ backgroundColor: colors[idea.type] }}>
-                {idea.type.replace('_', ' ')}
-              </span>
-              {idea.overall_score && (
-                <div className="idea-score">⭐ Score: {idea.overall_score}/5</div>
+              <div className="type-badge" style={{ background: getTypeColor(idea.type) }}>
+                {idea.type}
+              </div>
+              {idea.ratings && idea.ratings.feasibility > 0 && (
+                <p style={{ fontSize: '12px', color: '#10B981', marginTop: '8px' }}>
+                  ⭐ Score: {((idea.ratings.feasibility + idea.ratings.impact) / 2).toFixed(1)}/5
+                </p>
               )}
               <div className="card-buttons">
-                <button className="edit-btn" onClick={() => onEdit(idea)}>Edit</button>
+                <button className="edit-btn" onClick={() => setEditingId(idea.id)}>Edit</button>
                 <button className="delete-btn" onClick={() => onDelete(idea.id)}>Delete</button>
-                <button className="vet-btn" onClick={() => onVet(idea)}>Vet</button>
+                <button className="edit-btn" onClick={() => setVettingId(idea.id)}>Vet</button>
+                <button
+                  className="edit-btn"
+                  onClick={() => handleSummarize(idea)}
+                  disabled={loadingId === idea.id}
+                >
+                  {loadingId === idea.id ? '...' : '✨'}
+                </button>
+                <button
+                  className="edit-btn"
+                  onClick={() => handleGenerateTags(idea)}
+                  disabled={loadingId === idea.id}
+                >
+                  {loadingId === idea.id ? '...' : '🏷️'}
+                </button>
+                <button
+                  className="edit-btn"
+                  onClick={() => handleGetInsights(idea)}
+                  disabled={loadingId === idea.id}
+                >
+                  {loadingId === idea.id ? '...' : '💡'}
+                </button>
               </div>
             </div>
           ))
         )}
       </div>
-    </div>
+      {editingId && (
+        <EditForm
+          idea={ideas.find(i => i.id === editingId)}
+          onSave={(updatedIdea) => {
+            onEdit(updatedIdea);
+            setEditingId(null);
+          }}
+          onCancel={() => setEditingId(null)}
+        />
+      )}
+      {vettingId && (
+        <VettingPanel
+          idea={ideas.find(i => i.id === vettingId)}
+          onRate={onRate}
+          onClose={() => setVettingId(null)}
+        />
+      )}
+    </section>
   );
 }
 
-// MAIN APP
+// Main App Component
 function App() {
   const [ideas, setIdeas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingIdea, setEditingIdea] = useState(null);
-  const [vettingIdea, setVettingIdea] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
 
-  // Load ideas from Supabase
   useEffect(() => {
-    const loadIdeas = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('ideas')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        setIdeas(data || []);
-      } catch (err) {
-        console.error('Error loading ideas:', err);
-      } finally {
-        setLoading(false);
-      }
+    const fetchIdeas = async () => {
+      const { data } = await supabase.from('ideas').select('*');
+      setIdeas(data || []);
     };
-
-    loadIdeas();
+    fetchIdeas();
   }, []);
 
-  // Filter ideas based on search and type
+  const addIdea = async (newIdea) => {
+    const { data, error } = await supabase
+      .from('ideas')
+      .insert([{ ...newIdea, created_at: new Date() }])
+      .select();
+    if (!error && data) {
+      setIdeas([...ideas, data[0]]);
+    }
+  };
+
+  const editIdea = async (updatedIdea) => {
+    const { error } = await supabase
+      .from('ideas')
+      .update({ title: updatedIdea.title, description: updatedIdea.description })
+      .eq('id', updatedIdea.id);
+    if (!error) {
+      setIdeas(ideas.map(i => (i.id === updatedIdea.id ? updatedIdea : i)));
+    }
+  };
+
+  const deleteIdea = async (id) => {
+    if (window.confirm('Delete this idea?')) {
+      await supabase.from('ideas').delete().eq('id', id);
+      setIdeas(ideas.filter(i => i.id !== id));
+    }
+  };
+
+  const rateIdea = async (id, ratings) => {
+    const { error } = await supabase
+      .from('ideas')
+      .update({ ratings })
+      .eq('id', id);
+    if (!error) {
+      setIdeas(ideas.map(i => (i.id === id ? { ...i, ratings } : i)));
+    }
+  };
+
   const filteredIdeas = ideas.filter(idea => {
-    const matchesSearch = idea.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          idea.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === 'all' || idea.type === selectedType;
     return matchesSearch && matchesType;
   });
 
-  const handleAddIdea = (newIdea) => {
-    setIdeas([newIdea, ...ideas]);
-  };
-
-  const handleEditIdea = (updatedIdea) => {
-    setIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
-    setEditingIdea(null);
-  };
-
-  const handleVetIdea = (updatedIdea) => {
-    setIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
-    setVettingIdea(null);
-  };
-
-  const handleDeleteIdea = async (ideaId) => {
-    try {
-      const { error } = await supabase
-        .from('ideas')
-        .delete()
-        .eq('id', ideaId);
-      
-      if (error) throw error;
-      setIdeas(ideas.filter(idea => idea.id !== ideaId));
-    } catch (err) {
-      console.error('Error deleting idea:', err);
-    }
-  };
-
   return (
     <div className="App">
       <header className="App-header">
-        <h1>🌻 Idea Vault</h1>
-        <p>Where ideas grow, connect, and become decisions</p>
+        <h1>🌱 Idea Vault</h1>
+        <p>Capture, organize, and vet ideas with AI-powered insights</p>
       </header>
       <main>
-        <Inbox onAddIdea={handleAddIdea} />
-        {!loading && (
-          <>
-            <FilterSection 
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              selectedType={selectedType}
-              onTypeChange={setSelectedType}
-            />
-            <MindMap 
-              ideas={filteredIdeas} 
-              onEdit={setEditingIdea} 
-              onDelete={handleDeleteIdea}
-              onVet={setVettingIdea}
-            />
-          </>
-        )}
-        {editingIdea && (
-          <EditForm
-            idea={editingIdea}
-            onSave={handleEditIdea}
-            onCancel={() => setEditingIdea(null)}
-          />
-        )}
-        {vettingIdea && (
-          <VettingPanel
-            idea={vettingIdea}
-            onSave={handleVetIdea}
-            onCancel={() => setVettingIdea(null)}
-          />
-        )}
+        <Inbox onAddIdea={addIdea} />
+        <FilterSection
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedType={selectedType}
+          onTypeChange={setSelectedType}
+        />
+        <MindMap
+          ideas={filteredIdeas}
+          onEdit={editIdea}
+          onDelete={deleteIdea}
+          onRate={rateIdea}
+        />
       </main>
     </div>
   );
