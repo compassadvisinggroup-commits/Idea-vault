@@ -120,26 +120,31 @@ function VettingPanel({ idea, onSave, onCancel }) {
     : 0;
 
   const handleSave = async (e) => {
-    e.preventDefault();
-    try {
-      const { data, error } = await supabase
-        .from('ideas')
-        .update({
-          excitement_rating: excitement,
-          impact_rating: impact,
-          feasibility_rating: feasibility,
-          cost_rating: cost,
-          overall_score: parseFloat(overallScore)
-        })
-        .eq('id', idea.id)
-        .select();
-      
-      if (error) throw error;
+  e.preventDefault();
+  try {
+    const { data, error } = await supabase
+      .from('ideas')
+      .update({
+        excitement_rating: excitement,
+        impact_rating: impact,
+        feasibility_rating: feasibility,
+        cost_rating: cost,
+        overall_score: parseFloat(overallScore)
+      })
+      .eq('id', idea.id)
+      .select();
+    
+    if (error) throw error;
+    if (data && data.length > 0) {
       onSave(data[0]);
-    } catch (err) {
-      console.error('Error saving ratings:', err);
+    } else {
+      onCancel();
     }
-  };
+  } catch (err) {
+    console.error('Error saving ratings:', err);
+    alert('Error saving ratings. Please try again.');
+  }
+};
 
   const RatingScale = ({ label, value, onChange, description }) => (
     <div className="rating-group">
