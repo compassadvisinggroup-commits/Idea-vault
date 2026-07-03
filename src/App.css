@@ -6,7 +6,7 @@
 
 /* Color Palette - Cultivated Emergence */
 :root {
--color-product: #E63946;
+  --color-product: #E63946;
   --color-work: #10B981;
   --color-learning: #FCD34D;
   --color-fun: #FF6B35;
@@ -110,7 +110,7 @@ main {
   outline: none;
   border-color: var(--color-product);
   background: white;
-  box-shadow: 0 0 0 3px rgba(217, 136, 128, 0.1);
+  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
 }
 
 .inbox textarea {
@@ -131,6 +131,7 @@ main {
   transition: all 0.3s ease;
   margin-top: 12px;
   box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+  opacity: 1;
 }
 
 .inbox button:hover {
@@ -352,6 +353,7 @@ main {
   font-style: italic;
   grid-column: 1 / -1;
 }
+
 /* Filter Section */
 .filter-section {
   background: white;
@@ -380,7 +382,7 @@ main {
   outline: none;
   border-color: var(--color-product);
   background: white;
-  box-shadow: 0 0 0 3px rgba(217, 136, 128, 0.1);
+  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
 }
 
 .filter-buttons {
@@ -412,6 +414,7 @@ main {
   color: white;
   border-color: var(--color-product);
 }
+
 /* Responsive */
 @media (max-width: 768px) {
   .App-header h1 {
